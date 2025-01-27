@@ -15,20 +15,19 @@
 #define FLASH_START_ADDR  0x08000000  // Flash start address
 #define FLASH_PARAMS_ADDR 0x0807F800  // Start address for writing params
 
-// Params structure
+typedef union {
+    uint32_t uInt;
+    int32_t Int;
+    float Float;
+} parameterValue;
+
 typedef struct {
-    float tire_pressure_front_left;
-    float tire_pressure_front_right;
-    float tire_pressure_rear_left;
-    float tire_pressure_rear_right;
-    float suspension_stiffness_front;
-    float suspension_stiffness_rear;
-    float brake_bias;
-    float aero_coefficient;
-} FSTestParams;
+    uint8_t id;
+    parameterValue value;
+} parameter;
 
 HAL_StatusTypeDef Flash_ErasePage(uint32_t page_address);
-HAL_StatusTypeDef Flash_WriteParams(uint32_t address, FSTestParams *params);
-void Flash_ReadParams(uint32_t address, FSTestParams *params);
+HAL_StatusTypeDef Flash_WriteParams(uint32_t address, parameter *params, size_t count);
+void Flash_ReadParams(uint32_t address, parameter *params, size_t count);
 
 #endif /* INC_FLASH_MANAGER_H_ */

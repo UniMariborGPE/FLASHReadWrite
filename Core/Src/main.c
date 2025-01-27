@@ -45,18 +45,12 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-FSTestParams write_params = {
-        .tire_pressure_front_left = 2.1f,
-        .tire_pressure_front_right = 2.2f,
-        .tire_pressure_rear_left = 1.9f,
-        .tire_pressure_rear_right = 1.8f,
-        .suspension_stiffness_front = 3.5f,
-        .suspension_stiffness_rear = 3.0f,
-        .brake_bias = 0.6f,
-        .aero_coefficient = 1.25f
-    };
+parameter write_params[2] = {
+    { .id = 1, .value.Float = 2.1f },
+    { .id = 2, .value.Int = -42 }
+};
 
-FSTestParams read_params;
+parameter read_params[2];
 
 /* USER CODE END PV */
 
@@ -102,23 +96,23 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   if (Flash_ErasePage(FLASH_PARAMS_ADDR) == HAL_OK) {
-      if (Flash_WriteParams(FLASH_PARAMS_ADDR, &write_params) == HAL_OK) {
-          Flash_ReadParams(FLASH_PARAMS_ADDR, &read_params);
+        if (Flash_WriteParams(FLASH_PARAMS_ADDR, write_params, 2) == HAL_OK) {
+            Flash_ReadParams(FLASH_PARAMS_ADDR, read_params, 2);
 
-          if (memcmp(&write_params, &read_params, sizeof(FSTestParams)) == 0) {
-              printf("Uspesno zapisani in prebrani podatki!\n");
-          }
-          else {
-              printf("Podatki niso istpi pri branju kot pri pisanju.\n");
-          }
-      }
-      else {
-          printf("Napaka pri pisanju.\n");
-      }
-  }
-  else {
-      printf("Napaka pri brisanju.\n");
-  }
+            if (memcmp(write_params, read_params, sizeof(write_params)) == 0) {
+                printf("Uspesno zapisani in prebrani podatki!\n");
+            }
+            else {
+                printf("Podatki niso istpi pri branju kot pri pisanju.\n");
+            }
+        }
+        else {
+            printf("Napaka pri pisanju.\n");
+        }
+    }
+    else {
+        printf("Napaka pri brisanju.\n");
+    }
 
   /* USER CODE END 2 */
 

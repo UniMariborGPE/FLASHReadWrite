@@ -7,7 +7,7 @@
 
 #include "flash_manager.h"
 
-//Delete one page starting at page_address
+// Erase one page starting at page_address
 HAL_StatusTypeDef Flash_ErasePage(uint32_t page_address) {
     FLASH_EraseInitTypeDef eraseInitStruct;
     uint32_t page_error;
@@ -16,7 +16,7 @@ HAL_StatusTypeDef Flash_ErasePage(uint32_t page_address) {
 
     eraseInitStruct.TypeErase = FLASH_TYPEERASE_PAGES;
     eraseInitStruct.Page = (page_address - FLASH_BASE) / FLASH_PAGE_SIZE; //(0x0807F800 - 0x08000000) / 2048 = 255
-    eraseInitStruct.NbPages = 1; //Number of pages to erase
+    eraseInitStruct.NbPages = 1; // Number of pages to erase
 
     HAL_StatusTypeDef status = HAL_FLASHEx_Erase(&eraseInitStruct, &page_error);
 
@@ -24,8 +24,8 @@ HAL_StatusTypeDef Flash_ErasePage(uint32_t page_address) {
     return status;
 }
 
-HAL_StatusTypeDef Flash_WriteParams(uint32_t address, FSTestParams *params) {
-    if (!params) return HAL_ERROR;
+HAL_StatusTypeDef Flash_WriteParams(uint32_t address, parameter *params, size_t count) {
+    if (!params || count == 0) return HAL_ERROR;
 
     HAL_StatusTypeDef status;
 
@@ -33,10 +33,13 @@ HAL_StatusTypeDef Flash_WriteParams(uint32_t address, FSTestParams *params) {
 
     __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_ALL_ERRORS);
 
-    // Cast the structure to a uint64_t pointer for 8-byte writes
+    // Calculate the total size of the data to write
+    size_t total_size = sizeof(parameter) * count;
+    size_t full_chunks = total_size / 8;        // Number of full 8-byte chunks
+    size_t remaining_bytes = total_size % 8;   // Bytes left after full chunks
+
+    // Cast parameters to a uint64_t pointer for 8-byte writes
     uint64_t *data64 = (uint64_t *)params;
-    size_t full_chunks = sizeof(FSTestParams) / 8;  // Number of full 8-byte chunks
-    size_t remaining_bytes = sizeof(FSTestParams) % 8; // Bytes left after full chunks
 
     // Write full 8-byte chunks
     for (size_t i = 0; i < full_chunks; i++) {
@@ -68,10 +71,10 @@ HAL_StatusTypeDef Flash_WriteParams(uint32_t address, FSTestParams *params) {
     return HAL_OK;
 }
 
+// Read array of parameters from Flash
+void Flash_ReadParams(uint32_t address, parameter *params, size_t count) {
+    if (!params || count == 0) return;
 
-// Read parameters from Flash
-void Flash_ReadParams(uint32_t address, FSTestParams *params) {
-    if (!params) return;
-    memcpy(params, (void *)address, sizeof(FSTestParams));
+    size_t total_size = sizeof(parameter) * count;
+    memcpy(params, (void *)address, total_size);
 }
-
