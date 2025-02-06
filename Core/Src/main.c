@@ -22,9 +22,9 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include "flash_manager.h"
 #include "EEPROM.h"
 #include <stdio.h>
+#include <math.h>
 
 /* USER CODE END Includes */
 
@@ -35,7 +35,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define DATA_TYPE_UINT  0
+#define DATA_TYPE_INT   1
+#define DATA_TYPE_FLOAT 2
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -47,10 +49,6 @@
 I2C_HandleTypeDef hi2c4;
 
 /* USER CODE BEGIN PV */
-parameter write_params[2] = { { .id = 1, .value.Float = 2.1f }, { .id = 2,
-		.value.Int = -42 } };
-
-parameter read_params[2];
 
 /* USER CODE END PV */
 
@@ -98,43 +96,74 @@ int main(void) {
 	MX_I2C4_Init();
 	/* USER CODE BEGIN 2 */
 
-//  if (Flash_ErasePage(FLASH_PARAMS_ADDR) == HAL_OK) {
-//        if (Flash_WriteParams(FLASH_PARAMS_ADDR, write_params, 2) == HAL_OK) {
-//            Flash_ReadParams(FLASH_PARAMS_ADDR, read_params, 2);
-//
-//            if (memcmp(write_params, read_params, sizeof(write_params)) == 0) {
-//                printf("Uspesno zapisani in prebrani podatki!\n");
-//            }
-//            else {
-//                printf("Podatki niso istpi pri branju kot pri pisanju.\n");
-//            }
-//        }
-//        else {
-//            printf("Napaka pri pisanju.\n");
-//        }
-//    }
-//    else {
-//        printf("Napaka pri brisanju.\n");
-//    }
+	parameter testParams[3];
+	testParams[0].id = 1;
+	testParams[0].dataType = DATA_TYPE_FLOAT;
+	testParams[0].value.Float = 123.45f;
 
-	uint8_t write_data[4] = { 0xDE, 0xAD, 0xBE, 0xEF };  // Example data
-	uint8_t read_data[4] = { 0 };
+	testParams[1].id = 2;
+	testParams[1].dataType = DATA_TYPE_INT;
+	testParams[1].value.Int = -42;
 
-	for (int i = 0; i < 512; i++) {
-		EEPROM_PageErase(i); // Erases all data on a given page
+	testParams[2].id = 3;
+	testParams[2].dataType = DATA_TYPE_UINT;
+	testParams[2].value.uInt = 1000;
+
+	EEPROM_Write_Parameter_Array(0, 0, testParams, 3);
+
+	parameter readParams[3];
+	EEPROM_Read_Parameter_Array(0, 0, readParams, 3);
+
+	uint8_t success = 1;
+	for (int i = 0; i < 3; i++) {
+		if (readParams[i].id != testParams[i].id) {
+			success = 0;
+			break;
+		}
+
+		if (readParams[i].dataType != testParams[i].dataType) {
+			success = 0;
+			break;
+		}
+
+		switch (readParams[i].dataType) {
+		case DATA_TYPE_FLOAT:
+			if (fabs(readParams[i].value.Float - testParams[i].value.Float)
+					> 0.0001) {
+				success = 0;
+			}
+			break;
+		case DATA_TYPE_INT:
+			if (readParams[i].value.Int != testParams[i].value.Int) {
+				success = 0;
+			}
+			break;
+		case DATA_TYPE_UINT:
+			if (readParams[i].value.uInt != testParams[i].value.uInt) {
+				success = 0;
+			}
+			break;
+		default:
+			success = 0;
+			break;
+		}
+
+		if (!success) {
+			break;
+		}
 	}
-	EEPROM_Write(1, 0, write_data, 4);
-	EEPROM_Read(1, 0, read_data, 4);
 
-
+	if (success) {
+		printf("Parameters match!");
+	} else {
+		printf("Parameters don't match!");
+	}
 
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1) {
-
-		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
 	}

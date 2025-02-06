@@ -3,7 +3,8 @@
 
  EEPROM.c Using the HAL I2C Functions
  Author:   ControllersTech
- Updated:  Feb 16, 2021
+ Updated:  Feb 6, 2025
+ Updated by: tevzselcan
 
  ******************************************************************************
  Copyright (C) 2017 ControllersTech.com
@@ -181,4 +182,37 @@ void EEPROM_PageErase(uint16_t page) {
 			1000);
 
 	HAL_Delay(5);  // write cycle delay 
+}
+
+
+void EEPROM_Write_Parameter_Array(uint16_t page, uint16_t offset, const parameter *params, uint16_t numParams) {
+    for (uint16_t i = 0; i < numParams; i++) {
+        uint8_t buffer[6]; // 1(id) + 1(dataType) + 4(value) = 6 bytes
+        buffer[0] = params[i].id;
+        buffer[1] = params[i].dataType;
+        memcpy(buffer + 2, &params[i].value, sizeof(parameterValue));
+
+        // Calculate current address (6 bytes per parameter)
+        uint32_t address = (uint32_t)page * PAGE_SIZE + offset + (i * 6);
+        uint16_t current_page = (uint16_t)(address / PAGE_SIZE);
+        uint16_t current_offset = (uint16_t)(address % PAGE_SIZE);
+
+        EEPROM_Write(current_page, current_offset, buffer, sizeof(buffer));
+    }
+}
+
+void EEPROM_Read_Parameter_Array(uint16_t page, uint16_t offset, parameter *params, uint16_t numParams) {
+    for (uint16_t i = 0; i < numParams; i++) {
+        uint8_t buffer[6];
+        // Calculate address (6 bytes per parameter)
+        uint32_t address = (uint32_t)page * PAGE_SIZE + offset + (i * 6);
+        uint16_t current_page = (uint16_t)(address / PAGE_SIZE);
+        uint16_t current_offset = (uint16_t)(address % PAGE_SIZE);
+
+        EEPROM_Read(current_page, current_offset, buffer, sizeof(buffer));
+
+        params[i].id = buffer[0];
+        params[i].dataType = buffer[1];
+        memcpy(&params[i].value, buffer + 2, sizeof(parameterValue));
+    }
 }
